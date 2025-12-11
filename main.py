@@ -7,8 +7,10 @@ from typing import Optional
 
 app = FastAPI(title="Simulated API", version="0.1.0")
 
-# Get the static token from environment variable
-AUTH_TOKEN = os.environ.get("AUTH_TOKEN", "default_secret_token")
+# Get the static token from environment variable (required for security)
+AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
+if not AUTH_TOKEN:
+    raise ValueError("AUTH_TOKEN environment variable must be set")
 
 
 @app.middleware("http")
@@ -25,8 +27,9 @@ async def auth_middleware(request: Request, call_next):
     
     # Support both "Bearer <token>" and direct token format
     token = authorization
-    if authorization.startswith("Bearer "):
-        token = authorization[7:]  # Remove "Bearer " prefix
+    bearer_prefix = "Bearer "
+    if authorization.startswith(bearer_prefix):
+        token = authorization[len(bearer_prefix):]  # Remove "Bearer " prefix
     
     if token != AUTH_TOKEN:
         return JSONResponse(
